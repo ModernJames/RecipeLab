@@ -1,0 +1,47 @@
+package com.recipe.lab.dbconfiguration;
+
+import javax.sql.DataSource;
+
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+
+/**
+ * @author 김현재
+ * @since 2020.03.16
+ * @brief DB Configuration Bean 생성 및 등록
+ */
+@Configuration
+@PropertySource("classpath:/application.properties")
+public class DBConfiguration {
+	private final String MYBATIS_CONFIG = "classpath:mybatis/mybatis.xml";
+	
+    @Bean
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public DataSource mysqlDataSource() {
+        return DataSourceBuilder.create().build();
+    }
+    @Bean
+    public SqlSessionFactory sqlSessionFactory(@Autowired @Qualifier("mysqlDataSource") DataSource dataSource) throws Exception {
+        SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+         
+        factoryBean.setConfigLocation(resolver.getResource(MYBATIS_CONFIG));
+         
+        return factoryBean.getObject();
+    }
+    @Bean
+    public SqlSession sqlSession(@Autowired @Qualifier("sqlSessionFactory") SqlSessionFactory factory) {
+        return new SqlSessionTemplate(factory);
+    }
+}
